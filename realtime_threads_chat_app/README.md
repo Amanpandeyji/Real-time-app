@@ -289,9 +289,7 @@ npm test
 
 This project is licensed under the MIT License.
 
-## 👨‍💻 Author
 
-Your Name - [@yourhandle](https://github.com/yourhandle)
 
 ## 🙏 Acknowledgments
 
@@ -300,10 +298,5 @@ Your Name - [@yourhandle](https://github.com/yourhandle)
 - Socket.IO for real-time functionality
 - All open-source contributors
 
-## 📞 Support
-
-For support, email your-email@example.com or open an issue in the repository.
-
----
 
 ⭐ Star this repository if you find it helpful!
