@@ -1,0 +1,590 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+% Code listing style
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Realtime Threads \& Chat Application}
+\lhead{Technical Documentation}
+\rfoot{Page \thepage}
+
+\title{\textbf{Realtime Threads \& Chat Application}\\
+\large Technical Documentation for Interview Discussion}
+\author{Full-Stack Development Project}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This is a full-stack realtime web application that implements a social media platform with threaded discussions and direct messaging capabilities. The project demonstrates proficiency in modern web technologies, real-time communication, database design, authentication systems, and API development.
+
+\subsection{Key Highlights}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Custom Authentication:} Implemented JWT-based authentication with bcrypt password hashing, eliminating third-party dependencies
+    \item \textbf{Real-time Features:} WebSocket-based chat and notifications using Socket.IO
+    \item \textbf{Database Migration:} Successfully migrated from PostgreSQL to SQLite for simplified deployment
+    \item \textbf{Full-Stack TypeScript:} Type-safe development across frontend and backend
+    \item \textbf{Modern UI/UX:} Responsive design with Next.js 16 and shadcn/ui components
+\end{itemize}
+
+\section{Technology Stack}
+
+\subsection{Frontend}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Framework:} Next.js 16.0.5 (React 19.2.0)
+    \item \textbf{Language:} TypeScript 5
+    \item \textbf{UI Components:} shadcn/ui (Radix UI primitives)
+    \item \textbf{Styling:} Tailwind CSS 3.4.1
+    \item \textbf{State Management:} React Context API (custom AuthProvider)
+    \item \textbf{HTTP Client:} Axios 1.7.9
+    \item \textbf{Real-time:} Socket.IO Client 4.8.1
+    \item \textbf{Notifications:} Sonner (toast notifications)
+\end{itemize}
+
+\subsection{Backend}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Runtime:} Node.js with Express 4.21.2
+    \item \textbf{Language:} TypeScript 5
+    \item \textbf{Database:} SQLite with better-sqlite3 11.0.0
+    \item \textbf{Authentication:} jsonwebtoken 9.0.3 + bcrypt 5.1.1
+    \item \textbf{File Upload:} Multer 1.4.5-lts.1 (local storage)
+    \item \textbf{Real-time:} Socket.IO 4.8.1
+    \item \textbf{Environment:} dotenv for configuration
+\end{itemize}
+
+\subsection{Development Tools}
+\begin{itemize}[leftmargin=*]
+    \item ts-node-dev for backend hot-reload
+    \item ESLint for code quality
+    \item Docker Compose support
+\end{itemize}
+
+\section{System Architecture}
+
+\subsection{High-Level Architecture}
+The application follows a client-server architecture with real-time capabilities:
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────┐
+│                    Client (Port 4000)                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Next.js    │  │  Socket.IO   │  │    Axios     │  │
+│  │   Pages      │  │   Client     │  │   API Client │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                            │
+                    HTTP + WebSocket
+                            │
+┌─────────────────────────────────────────────────────────┐
+│                   Server (Port 5000)                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Express    │  │  Socket.IO   │  │     JWT      │  │
+│  │   Routes     │  │   Server     │  │     Auth     │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+│                            │                            │
+│                  ┌──────────────┐                       │
+│                  │   SQLite DB  │                       │
+│                  └──────────────┘                       │
+└─────────────────────────────────────────────────────────┘
+\end{verbatim}
+
+\subsection{Database Schema}
+
+The application uses five main tables:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{users:} User accounts with email, password hash, profile info
+    \item \textbf{threads:} Discussion threads with categories and tags
+    \item \textbf{replies:} Comments on threads (hierarchical structure)
+    \item \textbf{likes:} User likes on threads and replies
+    \item \textbf{notifications:} Activity notifications for users
+    \item \textbf{messages:} Direct messages between users
+    \item \textbf{message\_read\_status:} Read receipts for messages
+\end{enumerate}
+
+\section{Key Features Implementation}
+
+\subsection{Custom JWT Authentication System}
+
+Replaced third-party authentication (Clerk) with a custom implementation:
+
+\begin{lstlisting}[language=JavaScript, caption=JWT Token Generation]
+// backend/src/config/jwt.ts
+export function generateToken(userId: number): string {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_SECRET || 'fallback-secret',
+    { expiresIn: '7d' }
+  );
+}
+\end{lstlisting}
+
+\textbf{Key Components:}
+\begin{itemize}[leftmargin=*]
+    \item Password hashing with bcrypt (10 salt rounds)
+    \item JWT token generation with 7-day expiration
+    \item Custom middleware for route protection
+    \item Frontend AuthProvider with React Context
+    \item Automatic token injection in API requests
+    \item Token storage in localStorage
+\end{itemize}
+
+\subsection{Database Migration Strategy}
+
+Successfully migrated from PostgreSQL to SQLite:
+
+\textbf{Challenges Solved:}
+\begin{itemize}[leftmargin=*]
+    \item Converted positional parameters (\$1, \$2) to ? placeholders
+    \item Replaced PostgreSQL-specific functions:
+    \begin{itemize}
+        \item \texttt{NOW()} $\rightarrow$ \texttt{datetime('now')}
+        \item \texttt{ILIKE} $\rightarrow$ \texttt{LIKE}
+        \item \texttt{LEFT()} $\rightarrow$ \texttt{SUBSTR()}
+    \end{itemize}
+    \item Updated AUTO\_INCREMENT syntax for SQLite
+    \item Modified query return values (insertId vs lastInsertRowid)
+    \item Implemented triggers for timestamp updates
+\end{itemize}
+
+\subsection{Real-time Communication}
+
+Implemented bidirectional communication using Socket.IO:
+
+\begin{lstlisting}[language=JavaScript, caption=Socket.IO Integration]
+// backend/src/realtime/io.ts
+io.on('connection', (socket) => {
+  console.log('[io connection]------>', socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('[io disconnect]------>', socket.id);
+  });
+});
+\end{lstlisting}
+
+\textbf{Real-time Features:}
+\begin{itemize}[leftmargin=*]
+    \item Direct messaging with instant delivery
+    \item Online presence indicators
+    \item Live notification updates
+    \item Message read status tracking
+\end{itemize}
+
+\subsection{File Upload System}
+
+Replaced cloud storage (Cloudinary) with local file system:
+
+\begin{itemize}[leftmargin=*]
+    \item Multer disk storage configuration
+    \item File type validation (images only)
+    \item Automatic directory creation
+    \item Static file serving via Express
+    \item Image upload for threads and profiles
+\end{itemize}
+
+\section{API Design}
+
+\subsection{RESTful Endpoints}
+
+\subsubsection{Authentication Routes}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{POST /api/auth/register} - User registration
+    \item \texttt{POST /api/auth/login} - User login
+    \item \texttt{GET /api/auth/me} - Get current user (protected)
+\end{itemize}
+
+\subsubsection{Thread Routes}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{GET /api/threads} - List threads with filters
+    \item \texttt{POST /api/threads} - Create new thread (protected)
+    \item \texttt{GET /api/threads/:id} - Get thread details
+    \item \texttt{POST /api/threads/:id/like} - Toggle like (protected)
+    \item \texttt{POST /api/threads/:id/replies} - Add reply (protected)
+\end{itemize}
+
+\subsubsection{User Routes}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{GET /api/users/:id} - Get user profile
+    \item \texttt{PATCH /api/users/:id} - Update profile (protected)
+\end{itemize}
+
+\subsubsection{Chat Routes}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{GET /api/chat/users} - List chat users
+    \item \texttt{GET /api/chat/:userId} - Get conversation
+    \item \texttt{POST /api/chat/:userId} - Send message (protected)
+\end{itemize}
+
+\subsubsection{Notification Routes}
+\begin{itemize}[leftmargin=*]
+    \item \texttt{GET /api/notifications} - List notifications (protected)
+    \item \texttt{POST /api/notifications/:id/read} - Mark as read
+    \item \texttt{GET /api/notifications/unread-count} - Get unread count
+\end{itemize}
+
+\subsection{Request/Response Format}
+
+All API responses follow a consistent JSON structure:
+
+\begin{lstlisting}[language=JSON, caption=Success Response]
+{
+  "id": 1,
+  "email": "user@example.com",
+  "displayName": "John Doe",
+  "handle": "@john",
+  "createdAt": "2026-02-20T12:00:00.000Z"
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=JSON, caption=Error Response]
+{
+  "error": {
+    "message": "Route not found",
+    "status": 404
+  }
+}
+\end{lstlisting}
+
+\section{Security Implementation}
+
+\subsection{Authentication Security}
+\begin{itemize}[leftmargin=*]
+    \item Passwords hashed with bcrypt (10 rounds)
+    \item JWT tokens with expiration (7 days)
+    \item Protected routes with authentication middleware
+    \item Token validation on every protected request
+    \item Automatic logout on 401 responses
+\end{itemize}
+
+\subsection{Input Validation}
+\begin{itemize}[leftmargin=*]
+    \item Email format validation
+    \item Password strength requirements
+    \item File type validation for uploads
+    \item SQL injection prevention via parameterized queries
+\end{itemize}
+
+\subsection{Best Practices}
+\begin{itemize}[leftmargin=*]
+    \item Environment variables for sensitive data
+    \item CORS configuration
+    \item Error handling middleware
+    \item Secure HTTP headers
+\end{itemize}
+
+\section{Frontend Architecture}
+
+\subsection{Component Structure}
+\begin{verbatim}
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Home (threads list)
+│   ├── sign-in/           # Login page
+│   ├── sign-up/           # Registration page
+│   ├── threads/
+│   │   ├── new/           # Create thread
+│   │   └── [id]/          # Thread details
+│   ├── chat/              # Direct messages
+│   ├── notifications/     # Notifications page
+│   └── profile/           # User profile
+├── components/            # Reusable components
+│   ├── layout/
+│   │   └── navbar.tsx     # Navigation bar
+│   ├── threads/
+│   │   └── threads-home.tsx
+│   ├── chat/
+│   │   └── direct-chat-panel.tsx
+│   └── ui/                # shadcn/ui components
+├── contexts/
+│   └── auth-context.tsx   # Authentication state
+├── hooks/
+│   ├── use-socket.ts      # Socket.IO hook
+│   └── use-notification-count.tsx
+├── lib/
+│   ├── api-client.ts      # Axios instance
+│   └── utils.ts           # Utility functions
+└── types/                 # TypeScript definitions
+\end{verbatim}
+
+\subsection{State Management}
+
+Custom React Context for authentication:
+
+\begin{lstlisting}[language=JavaScript, caption=Auth Context Provider]
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchCurrentUser();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+  
+  return (
+    <AuthContext.Provider value={{ user, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+\end{lstlisting}
+
+\section{Technical Challenges \& Solutions}
+
+\subsection{Challenge 1: Third-Party API Removal}
+
+\textbf{Problem:} Application heavily relied on Clerk (auth) and Cloudinary (storage)
+
+\textbf{Solution:}
+\begin{itemize}[leftmargin=*]
+    \item Implemented custom JWT authentication system
+    \item Created local file storage with Multer
+    \item Built custom React auth context
+    \item Updated all components to use custom auth
+\end{itemize}
+
+\subsection{Challenge 2: Database Migration}
+
+\textbf{Problem:} PostgreSQL syntax incompatible with SQLite
+
+\textbf{Solution:}
+\begin{itemize}[leftmargin=*]
+    \item Analyzed all SQL queries across codebase
+    \item Created systematic conversion strategy
+    \item Updated 22+ queries across 4 repository files
+    \item Implemented SQLite-specific datetime handling
+\end{itemize}
+
+\subsection{Challenge 3: Type Safety}
+
+\textbf{Problem:} Maintaining type consistency across stack
+
+\textbf{Solution:}
+\begin{itemize}[leftmargin=*]
+    \item Shared TypeScript interfaces for data models
+    \item Custom type definitions for API responses
+    \item Strict TypeScript configuration
+    \item Runtime type validation where needed
+\end{itemize}
+
+\section{Performance Optimizations}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Database Indexing:} Unique constraints on email and handle
+    \item \textbf{React Memoization:} useMemo for API client instances
+    \item \textbf{Lazy Loading:} Component-level code splitting
+    \item \textbf{Efficient Queries:} Optimized SQL with proper JOINs
+    \item \textbf{WebSocket Efficiency:} Event-based real-time updates
+\end{itemize}
+
+\section{Testing \& Debugging}
+
+\subsection{Testing Strategy}
+\begin{itemize}[leftmargin=*]
+    \item Manual testing of all user flows
+    \item API testing via frontend integration
+    \item Real-time feature testing with multiple clients
+    \item Error scenario testing (network failures, auth errors)
+\end{itemize}
+
+\subsection{Debugging Approach}
+\begin{itemize}[leftmargin=*]
+    \item Console logging for development
+    \item TypeScript for compile-time error catching
+    \item Browser DevTools for frontend debugging
+    \item Network tab for API inspection
+\end{itemize}
+
+\section{Deployment Considerations}
+
+\subsection{Environment Variables}
+\begin{lstlisting}[language=bash, caption=Backend .env]
+PORT=5000
+JWT_SECRET=your-secret-key
+DATABASE_PATH=./database.sqlite
+UPLOAD_DIR=./uploads
+\end{lstlisting}
+
+\subsection{Production Readiness}
+\begin{itemize}[leftmargin=*]
+    \item Environment-based configuration
+    \item Error handling middleware
+    \item Logging infrastructure ready
+    \item Database migrations system
+    \item Docker Compose configuration available
+\end{itemize}
+
+\section{Future Enhancements}
+
+\subsection{Potential Improvements}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Admin Dashboard:} User management and moderation tools
+    \item \textbf{Email Verification:} Confirm user email addresses
+    \item \textbf{Password Reset:} Forgot password functionality
+    \item \textbf{Rate Limiting:} Prevent API abuse
+    \item \textbf{Caching:} Redis for session management
+    \item \textbf{Search:} Full-text search for threads
+    \item \textbf{Rich Text Editor:} Markdown or WYSIWYG support
+    \item \textbf{File Attachments:} Support for non-image files
+    \item \textbf{Thread Categories:} Better organization
+    \item \textbf{User Mentions:} @ tagging in threads/replies
+    \item \textbf{Reactions:} Multiple reaction types beyond likes
+    \item \textbf{Analytics:} User engagement metrics
+\end{itemize}
+
+\section{Interview Discussion Points}
+
+\subsection{Technical Skills Demonstrated}
+\begin{itemize}[leftmargin=*]
+    \item Full-stack TypeScript development
+    \item RESTful API design and implementation
+    \item Real-time bidirectional communication
+    \item Database design and migration
+    \item Authentication and authorization
+    \item State management in React
+    \item Modern frontend development (Next.js)
+    \item Problem-solving and debugging
+\end{itemize}
+
+\subsection{Architectural Decisions}
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Why SQLite?} 
+    \begin{itemize}
+        \item Simplified deployment (no separate DB server)
+        \item Sufficient for small to medium applications
+        \item Zero configuration required
+        \item Perfect for development and testing
+    \end{itemize}
+    
+    \item \textbf{Why Custom Auth?}
+    \begin{itemize}
+        \item No external dependencies or costs
+        \item Full control over authentication flow
+        \item Better understanding of security
+        \item Customizable to specific needs
+    \end{itemize}
+    
+    \item \textbf{Why Next.js?}
+    \begin{itemize}
+        \item Server-side rendering capabilities
+        \item Built-in routing system
+        \item Excellent developer experience
+        \item Production-ready optimizations
+    \end{itemize}
+    
+    \item \textbf{Why Socket.IO?}
+    \begin{itemize}
+        \item Reliable WebSocket implementation
+        \item Automatic fallback mechanisms
+        \item Easy event-based API
+        \item Great documentation and community
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Lessons Learned}
+\begin{itemize}[leftmargin=*]
+    \item Importance of database abstraction layers
+    \item Value of TypeScript in preventing runtime errors
+    \item Strategic approach to dependency management
+    \item Systematic debugging methodology
+    \item Balance between third-party libraries and custom code
+\end{itemize}
+
+\section{Code Quality Metrics}
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{TypeScript Coverage:} 100\% (all files in TypeScript)
+    \item \textbf{Component Reusability:} High (shadcn/ui components)
+    \item \textbf{Code Organization:} Modular structure with clear separation
+    \item \textbf{Error Handling:} Comprehensive error middleware
+    \item \textbf{Documentation:} Clear file structure and naming conventions
+\end{itemize}
+
+\section{Running the Application}
+
+\subsection{Prerequisites}
+\begin{itemize}[leftmargin=*]
+    \item Node.js 18+ installed
+    \item npm or yarn package manager
+\end{itemize}
+
+\subsection{Installation Steps}
+
+\begin{lstlisting}[language=bash, caption=Backend Setup]
+cd backend
+npm install
+npm run dev  # Runs on port 5000
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash, caption=Frontend Setup]
+cd frontend
+npm install
+npm run dev  # Runs on port 4000
+\end{lstlisting}
+
+\subsection{Access Points}
+\begin{itemize}[leftmargin=*]
+    \item Frontend: \url{http://localhost:4000}
+    \item Backend API: \url{http://localhost:5000}
+\end{itemize}
+
+\section{Conclusion}
+
+This project demonstrates comprehensive full-stack development capabilities, including:
+
+\begin{itemize}[leftmargin=*]
+    \item Modern web technology proficiency
+    \item Problem-solving and debugging skills
+    \item System architecture design
+    \item Security best practices
+    \item Real-time communication implementation
+    \item Database management and migration
+    \item API design and development
+\end{itemize}
+
+The application is production-ready with room for enhancement, showcasing both technical competence and scalability awareness.
+
+\end{document}

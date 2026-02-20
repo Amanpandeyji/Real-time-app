@@ -1,0 +1,27 @@
+
+
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+
+    display_name TEXT,
+
+    handle TEXT UNIQUE,
+
+    avatar_url TEXT,
+
+    bio TEXT,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
+AFTER UPDATE ON users 
+FOR EACH ROW 
+BEGIN
+    UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+END;

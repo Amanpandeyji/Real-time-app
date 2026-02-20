@@ -1,0 +1,50 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "sonner";
+import Navbar from "@/components/layout/navbar";
+import { NotificationCountProvider } from "@/hooks/use-notification-count";
+import { AuthProvider } from "@/contexts/auth-context";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Threads & Chat App",
+  description: "Real-time threads and chat application",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" className="dark">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <AuthProvider>
+          <NotificationCountProvider>
+            <div className="flex min-h-screen flex-col bg-background text-foreground">
+              <Navbar />
+              <main className="flex flex-1 flex-col">
+                <div className="mx-auto flex w-full max-w-6xl  flex-1 flex-col px-4 py-8 md:py-10">
+                  {children}
+                </div>
+              </main>
+            </div>
+            <Toaster />
+          </NotificationCountProvider>
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
